@@ -1,0 +1,98 @@
+{
+  "project_info": {
+    "project_number": "971568197406",
+    "project_id": "tripy-tropi",
+    "storage_bucket": "tripy-tropi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:971568197406:android:5e98c91863e5d7620ae30f",
+        "android_client_info": {
+          "package_name": "Tripy.Tropi"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "971568197406-0aedge77qdv0q1cl8229vv3bq53uj56r.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "Tripy.Tropi",
+            "certificate_hash": "0c136849dd73b1ba3430d0d310ce2322ae39bf60"
+          }
+        },
+        {
+          "client_id": "971568197406-n2inh14p56g3455lnmn0tgrgat56nu97.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVaPKSrUKpep719Im4AIlLGfHinVYDud4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "971568197406-e884p45obku7f48hug1483a1a8f3a0up.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "971568197406-ddi4q79j8gk60otli8esbbgio8fdccla.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.tripyTropy"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:971568197406:android:08357f29d484bde70ae30f",
+        "android_client_info": {
+          "package_name": "com.example.tripy_tropy"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "971568197406-pmfm4dmojc4k1qap2c5vmq7oj9arbd8h.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.tripy_tropy",
+            "certificate_hash": "0c136849dd73b1ba3430d0d310ce2322ae39bf60"
+          }
+        },
+        {
+          "client_id": "971568197406-n2inh14p56g3455lnmn0tgrgat56nu97.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVaPKSrUKpep719Im4AIlLGfHinVYDud4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "971568197406-e884p45obku7f48hug1483a1a8f3a0up.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "971568197406-ddi4q79j8gk60otli8esbbgio8fdccla.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.tripyTropy"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
