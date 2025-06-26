@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tripy_tropy/core/constants/app_colors.dart';
+import 'package:tripy_tropy/core/routes/app_routes.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -59,62 +60,79 @@ class HomeScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               Container(
-                constraints:
-                    const BoxConstraints(maxHeight: 200), // Limit growth
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.greenLight),
-                  borderRadius: BorderRadius.circular(12),
-                  color: AppColors.surface, // Optional: background for contrast
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: TextField(
+                  constraints:
+                      const BoxConstraints(maxHeight: 150), // Limit growth
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppColors.greenLight),
+                    borderRadius: BorderRadius.circular(12),
+                    color:
+                        AppColors.surface, // Optional: background for contrast
+                  ),
+                  child: Stack(
+                    children: [
+                      TextField(
                         controller: controller,
-                        maxLines: 5, // Makes it grow with content
+                        maxLines: 5,
                         minLines: 1,
                         keyboardType: TextInputType.multiline,
                         decoration: const InputDecoration(
                           hintText:
-                              "7 days in Bali next April, 3 people, mid-range budget...",
+                              "I want a 5-day relaxing trip to Goa in December with my friends",
+
                           hintStyle: TextStyle(color: Colors.white60),
-                          border: InputBorder.none,// Seamless
-                          focusedBorder: InputBorder.none, 
-                          isDense: true,
+                          border: InputBorder.none,
+                          focusedBorder: InputBorder.none,
                           contentPadding:
-                              EdgeInsets.zero, // Remove inner padding
+                              EdgeInsets.only(right: 48), // leave space for mic
                         ),
                         style: const TextStyle(color: Colors.white),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.mic, color: AppColors.greenAccent),
-                      onPressed: () {
-                        // Handle voice input
-                      },
-                    )
-                  ],
-                ),
-              ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: IconButton(
+                          icon: const Icon(Icons.mic,
+                              color: AppColors.greenAccent),
+                          onPressed: () {
+                            // Voice input logic
+                          },
+                        ),
+                      )
+                    ],
+                  )),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton.icon(
+                child: ElevatedButton(
                   onPressed: () {
-                    // Navigate to ChatScreen with prompt from `controller.text`
+                    final prompt = controller.text.trim();
+                    if (prompt.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text("Please enter your trip idea")),
+                      );
+                      return;
+                    }
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.Itinerary,
+                      arguments: prompt,
+                    );
                   },
-                  icon: const Icon(Icons.send),
-                  label: const Text("Create My Itinerary"),
+                  child: const Text(
+                    "Create My Itinerary",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
-              const Text(
-                "Offline Saved Itineraries",
-                style: TextStyle(fontWeight: FontWeight.bold),
+              const Center(
+                child: Text(
+                  "Offline Saved Itineraries",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
               const SizedBox(height: 8),
               ...savedTrips.map((trip) => Card(
