@@ -1,101 +1,142 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tripy_tropy/core/constants/app_colors.dart';
+import 'package:tripy_tropy/application/providers/itinerary_provider.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:tripy_tropy/core/routes/app_routes.dart';
 
-class ItineraryScreen extends StatefulWidget {
+class ItineraryScreen extends ConsumerWidget {
   final String prompt;
   const ItineraryScreen({super.key, required this.prompt});
 
   @override
-  State<ItineraryScreen> createState() => _ItineraryScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final result = ref.watch(itineraryProvider(prompt));
+    //print(result);
 
-class _ItineraryScreenState extends State<ItineraryScreen> {
-  bool _loading = true;
-  String _itinerary = "";
-
-  @override
-  void initState() {
-    super.initState();
-    _generateItinerary();
-  }
-
-  Future<void> _generateItinerary() async {
-    await Future.delayed(const Duration(seconds: 3)); // Simulate API call
-    setState(() {
-      _loading = false;
-      _itinerary = """
-Day 1: Arrival in Bali, check into hotel, beach walk\n
-Day 2: Ubud Monkey Forest & local market\n
-Day 3: Nusa Penida day trip, snorkeling\n
-Day 4: Mount Batur sunrise hike\n
-Day 5: Relax, spa & café hopping\n
-Day 6: Temple visits & cultural show\n
-Day 7: Shopping & Departure\n
-"""; // You can replace this with actual AI response
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
-        title: const Text("Your Trip Itinerary",
-            style: TextStyle(color: Colors.white)),
+        elevation: 0,
+        title: const Text("Home", style: TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: CircleAvatar(
+              backgroundColor: AppColors.greenAccent,
+              child: Text("S", style: TextStyle(color: Colors.white)),
+            ),
+          )
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(24),
-        child: _loading
-            ? const Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(color: AppColors.greenAccent),
-                    SizedBox(height: 16),
-                    Text("Creating itinerary...",
-                        style: TextStyle(color: Colors.white70)),
-                  ],
-                ),
-              )
-            : SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("Prompt:",
-                        style: TextStyle(color: AppColors.textSecondary)),
-                    Text(widget.prompt,
-                        style: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 24),
-                    const Text("Generated Plan:",
-                        style: TextStyle(
-                            color: AppColors.greenAccent,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 16),
-                    Text(
-                      _itinerary,
-                      style: const TextStyle(
-                          color: AppColors.textPrimary, fontSize: 16),
-                    ),
-                    const SizedBox(height: 24),
-                    Center(
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.greenAccent,
-                          foregroundColor: Colors.black,
-                        ),
-                        child: const Text("Back to Home"),
-                      ),
-                    )
-                  ],
-                ),
-              ),
+        child: result.when(
+          loading: () => _buildLoadingUI(context),
+          error: (err, _) => _buildErrorUI(err.toString()),
+          data: (itinerary) => _buildItineraryUI(context, itinerary),
+        ),
       ),
+    );
+  }
+
+  Widget _buildLoadingUI(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: AppColors.greenAccent),
+                SizedBox(height: 16),
+                Text("Curating a perfect plan for you...",
+                    style: TextStyle(color: Colors.white70)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          followUpButton(context, disabled: true),
+          const SizedBox(height: 12),
+          saveOfflineCheckbox(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItineraryUI(BuildContext context, String itinerary) {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("Itinerary Created 🧳",
+              style: TextStyle(
+                  color: AppColors.greenAccent,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: MarkdownBody(
+              data: itinerary,
+              styleSheet: MarkdownStyleSheet(
+                p: const TextStyle(color: Colors.white),
+                strong: const TextStyle(
+                    fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          followUpButton(context),
+          const SizedBox(height: 12),
+          saveOfflineCheckbox(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorUI(String error) {
+    return Center(
+        child:
+            Text("Error: $error", style: const TextStyle(color: Colors.red)));
+  }
+
+  Widget followUpButton(BuildContext context, {bool disabled = false}) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: disabled
+            ? null
+            : () {
+                Navigator.pushNamed(context, AppRoutes.followUpChat);
+              },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.greenAccent,
+          foregroundColor: Colors.black,
+        ),
+        child: const Text("Follow up to refine"),
+      ),
+    );
+  }
+
+  Widget saveOfflineCheckbox() {
+    return Row(
+      children: [
+        Checkbox(value: false, onChanged: (val) {}),
+        const Text("Save Offline", style: TextStyle(color: Colors.white)),
+      ],
     );
   }
 }

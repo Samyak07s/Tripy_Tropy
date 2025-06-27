@@ -12,6 +12,21 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   AuthController() : super(const AsyncValue.data(null));
 
+  Future<void> _checkLoginStatus() async {
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    final user = mapFirebaseUserToUserModel(firebaseUser);
+    state = AsyncValue.data(user);
+  }
+
+  UserModel? mapFirebaseUserToUserModel(User? user) {
+    if (user == null) return null;
+
+    return UserModel(
+      email: user.email ?? '',
+      name: user.displayName ?? 'User', // fallback name
+    );
+  }
+
   Future<void> signup(String email, String password) async {
     state = const AsyncValue.loading();
     try {

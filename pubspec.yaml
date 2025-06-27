@@ -36,6 +36,9 @@ dependencies:
   firebase_auth: ^4.17.4
 
   google_sign_in: ^6.1.5
+
+  flutter_dotenv: ^5.1.0  # for .env file
+  flutter_markdown: ^0.6.14  # for bold text decoding and stuff
   
 
   # The following adds the Cupertino Icons font to your application.
@@ -68,6 +71,7 @@ flutter:
   assets:
     - assets/icon/
     - assets/
+    - .env
     # - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
