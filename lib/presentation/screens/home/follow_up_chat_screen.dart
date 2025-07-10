@@ -1,23 +1,63 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tripy_tropy/core/constants/app_colors.dart';
+import 'package:tripy_tropy/application/providers/followup_chat_provider.dart';
+import 'package:tripy_tropy/data/models/chat_message.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class FollowUpChatScreen extends StatelessWidget {
+class FollowUpChatScreen extends ConsumerStatefulWidget {
   const FollowUpChatScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final userMessage = "7 days in Bali next April, 3 people, mid-range budget...";
-    final aiResponse = '''
-**Day 1: Arrival in Bali & Settle in Ubud**
-- Morning: Arrive at **Bali, Denpasar Airport**  
-- Transfer: Private driver to **Ubud** (~1.5 hrs)  
-- Check-in at **Ubud Aura Retreat**  
-- Explore **Ubud local area**, including **Tegalalang rice terraces**  
-- Dinner at **Locavore** (known for 5-star dishes)  
-[Open in maps](https://maps.google.com/?q=Bali)
+  ConsumerState<FollowUpChatScreen> createState() => _FollowUpChatScreenState();
+}
 
-*Mumbai to Bali, Indonesia | 11hrs 5mins*
-''';
+class _FollowUpChatScreenState extends ConsumerState<FollowUpChatScreen> {
+  late final Map<String, String> chatArgs;
+  late final TextEditingController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = TextEditingController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, String>?;
+
+    if (args == null ||
+        !args.containsKey('prompt') ||
+        !args.containsKey('response')) {
+      // navigate back or handle error
+      return;
+    }
+
+    chatArgs = {
+      'prompt': args['prompt']!,
+      'response': args['response']!,
+    };
+  }
+
+  Future<void> launchUrl(Uri url) async {
+    if (!await canLaunchUrl(url)) {
+      throw 'Could not launch $url';
+    }
+    await launchUrl(url);
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final messages = ref.watch(chatProvider(chatArgs));
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -25,7 +65,12 @@ class FollowUpChatScreen extends StatelessWidget {
         backgroundColor: AppColors.background,
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
-        title: const Text("7 days in Bali...", style: TextStyle(color: Colors.white)),
+        title: Text(
+          chatArgs['prompt']!.length > 25
+              ? "${chatArgs['prompt']!.substring(0, 25)}..."
+              : chatArgs['prompt']!,
+          style: const TextStyle(color: Colors.white),
+        ),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 16),
@@ -36,87 +81,98 @@ class FollowUpChatScreen extends StatelessWidget {
           )
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
-            child: ListView(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 80),
+            child: ListView.builder(
               padding: const EdgeInsets.all(16),
-              children: [
-                // User message
-                Align(
-                  alignment: Alignment.centerRight,
+              itemCount: messages.length,
+              itemBuilder: (context, index) {
+                final msg = messages[index];
+                final isUser = msg.sender == "user";
+                return Align(
+                  alignment:
+                      isUser ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
-                    padding: const EdgeInsets.all(16),
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: AppColors.greenAccent.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(userMessage, style: const TextStyle(color: Colors.white)),
-                  ),
-                ),
-
-                // AI Message
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Optional: Markdown rendering or RichText parsing here
-                      Text(aiResponse, style: const TextStyle(color: Colors.white)),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          TextButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.copy, color: Colors.white70),
-                            label: const Text("Copy", style: TextStyle(color: Colors.white70)),
-                          ),
-                          TextButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.save_alt, color: Colors.white70),
-                            label: const Text("Save Offline", style: TextStyle(color: Colors.white70)),
-                          ),
-                          TextButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.refresh, color: Colors.white70),
-                            label: const Text("Regenerate", style: TextStyle(color: Colors.white70)),
-                          ),
-                        ],
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(16),
+                      constraints: const BoxConstraints(maxWidth: 300),
+                      decoration: BoxDecoration(
+                        color: isUser
+                            ? AppColors.greenAccent.withOpacity(0.15)
+                            : AppColors.surface,
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                    ],
-                  ),
-                ),
-              ],
+                      child: isUser
+                          ? Text(msg.message,
+                              style: const TextStyle(color: Colors.white))
+                          : MarkdownBody(
+                              data: msg.message,
+                              styleSheet: MarkdownStyleSheet.fromTheme(
+                                      Theme.of(context))
+                                  .copyWith(
+                                p: const TextStyle(color: Colors.white),
+                                a: const TextStyle(
+                                  color: Colors.lightBlueAccent,
+                                  //decoration: TextDecoration.underline,
+                                ),
+                                strong: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white),
+                              ),
+                              onTapLink: (text, href, title) {
+                                if (href != null) {
+                                  launchUrl(Uri.parse(href));
+                                }
+                              },
+                            )),
+                );
+              },
             ),
           ),
-
-          // Bottom input
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            color: AppColors.surface,
+          Positioned(
+            bottom: 12,
+            left: 16,
+            right: 16,
             child: Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    decoration: const InputDecoration(
-                      hintText: "Follow up to refine",
-                      hintStyle: TextStyle(color: Colors.white60),
-                      border: InputBorder.none,
+                  child: Card(
+                    color: AppColors.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
                     ),
-                    style: const TextStyle(color: Colors.white),
+                    child: TextField(
+                      controller: controller,
+                      decoration: InputDecoration(
+                        hintText: "Follow up to refine...",
+                        hintStyle: const TextStyle(color: Colors.white60),
+                        filled: true,
+                        fillColor: AppColors.surface.withOpacity(0.4),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 14),
+                        border: InputBorder.none,
+                      ),
+                      style: const TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.send, color: AppColors.greenAccent),
-                  onPressed: () {
-                    // Send follow-up logic
-                  },
+                const SizedBox(width: 8),
+                CircleAvatar(
+                  backgroundColor: AppColors.greenAccent,
+                  child: IconButton(
+                    icon: const Icon(Icons.send, color: Colors.black),
+                    onPressed: () {
+                      final msg = controller.text.trim();
+                      if (msg.isNotEmpty) {
+                        ref
+                            .read(chatProvider(chatArgs).notifier)
+                            .sendMessage(msg);
+                        controller.clear();
+                      }
+                    },
+                  ),
                 ),
               ],
             ),

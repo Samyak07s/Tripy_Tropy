@@ -10,12 +10,18 @@ final authProvider =
 
 class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  AuthController() : super(const AsyncValue.data(null));
+  AuthController() : super(const AsyncValue.data(null)) {
+    _checkLoginStatus();
+  }
 
   Future<void> _checkLoginStatus() async {
-    final firebaseUser = FirebaseAuth.instance.currentUser;
-    final user = mapFirebaseUserToUserModel(firebaseUser);
-    state = AsyncValue.data(user);
+    try {
+      final firebaseUser = _auth.currentUser;
+      final user = mapFirebaseUserToUserModel(firebaseUser);
+      state = AsyncValue.data(user);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
   }
 
   UserModel? mapFirebaseUserToUserModel(User? user) {

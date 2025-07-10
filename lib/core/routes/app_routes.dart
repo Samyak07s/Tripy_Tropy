@@ -38,7 +38,10 @@ class AppRoutes {
         );
 
       case followUpChat:
-        return MaterialPageRoute(builder: (_) => const FollowUpChatScreen());
+        return MaterialPageRoute(
+          builder: (_) => const FollowUpChatScreen(),
+          settings: settings, // ✅ Pass arguments here
+        );
 
       default:
         return MaterialPageRoute(

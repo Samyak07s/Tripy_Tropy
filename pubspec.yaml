@@ -36,6 +36,7 @@ dependencies:
   firebase_auth: ^4.17.4
 
   google_sign_in: ^6.1.5
+  url_launcher: ^6.2.5
 
   flutter_dotenv: ^5.1.0  # for .env file
   flutter_markdown: ^0.6.14  # for bold text decoding and stuff

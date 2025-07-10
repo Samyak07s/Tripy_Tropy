@@ -37,12 +37,12 @@ STRICT FORMAT ONLY:
 Example output:
 
 Day 1:
-- Arrive in **Tokyo** ([map](https://maps.google.com/?q=Tokyo))
+- Arrive in **Tokyo** ([📍Google Maps](https://maps.google.com/?q=Tokyo))
 - Visit **Shibuya Crossing** ([link](https://maps.google.com/?q=Shibuya+Crossing))
 - Eat **sushi** at **Tsukiji Market** ([link](https://www.tsukiji.or.jp/english/))
 
 Day 2:
-- Day trip to **Mount Fuji** ([map](https://maps.google.com/?q=Mount+Fuji))
+- Day trip to **Mount Fuji** ([📍Google Maps](https://maps.google.com/?q=Mount+Fuji))
 - Return and explore **Kyoto Gion District** ([link](https://maps.google.com/?q=Gion+Kyoto))
 """
             }

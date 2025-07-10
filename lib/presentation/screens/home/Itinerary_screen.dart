@@ -4,10 +4,18 @@ import 'package:tripy_tropy/core/constants/app_colors.dart';
 import 'package:tripy_tropy/application/providers/itinerary_provider.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:tripy_tropy/core/routes/app_routes.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ItineraryScreen extends ConsumerWidget {
   final String prompt;
   const ItineraryScreen({super.key, required this.prompt});
+
+  Future<void> launchUrl(Uri url) async {
+    if (!await canLaunchUrl(url)) {
+      throw 'Could not launch $url';
+    }
+    await launchUrl(url);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -64,7 +72,7 @@ class ItineraryScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
-          followUpButton(context, disabled: true),
+          followUpButton(context, '', disabled: true),
           const SizedBox(height: 12),
           saveOfflineCheckbox(),
         ],
@@ -84,22 +92,30 @@ class ItineraryScreen extends ConsumerWidget {
                   fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: MarkdownBody(
-              data: itinerary,
-              styleSheet: MarkdownStyleSheet(
-                p: const TextStyle(color: Colors.white),
-                strong: const TextStyle(
-                    fontWeight: FontWeight.bold, color: Colors.white),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(16),
               ),
-            ),
-          ),
+              child: MarkdownBody(
+                data: itinerary,
+                styleSheet: MarkdownStyleSheet(
+                  p: const TextStyle(color: Colors.white),
+                  strong: const TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.white),
+                  a: const TextStyle(
+                    color: Colors.lightBlueAccent,
+                    //decoration: TextDecoration.underline,
+                  ),
+                ),
+                onTapLink: (text, href, title) {
+                  if (href != null) {
+                    launchUrl(Uri.parse(href));
+                  }
+                },
+              )),
           const SizedBox(height: 24),
-          followUpButton(context),
+          followUpButton(context, itinerary),
           const SizedBox(height: 12),
           saveOfflineCheckbox(),
         ],
@@ -113,14 +129,22 @@ class ItineraryScreen extends ConsumerWidget {
             Text("Error: $error", style: const TextStyle(color: Colors.red)));
   }
 
-  Widget followUpButton(BuildContext context, {bool disabled = false}) {
+  Widget followUpButton(BuildContext context, String itinerary,
+      {bool disabled = false}) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         onPressed: disabled
             ? null
             : () {
-                Navigator.pushNamed(context, AppRoutes.followUpChat);
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.followUpChat,
+                  arguments: {
+                    'prompt': prompt,
+                    'response': itinerary,
+                  },
+                );
               },
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.greenAccent,
