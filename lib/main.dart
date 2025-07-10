@@ -2,8 +2,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/adapters.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:tripy_tropy/application/providers/auth_provider.dart';
 import 'package:tripy_tropy/core/routes/app_routes.dart';
+import 'package:tripy_tropy/data/models/itinerary_model.dart';
 import 'package:tripy_tropy/firebase_options.dart';
 import 'package:tripy_tropy/presentation/screens/auth/login_screen.dart';
 import 'package:tripy_tropy/presentation/screens/home/home_screen.dart';
@@ -14,10 +18,18 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await dotenv.load(fileName: ".env");
-  
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // ✅ Only call once
+  final dir = await getApplicationDocumentsDirectory();
+  await Hive.initFlutter(dir.path);
+
+  // ✅ Register and open Hive box
+  Hive.registerAdapter(ItineraryModelAdapter());
+  await Hive.openBox<ItineraryModel>('saved_itineraries');
 
   runApp(const ProviderScope(child: TripyAIApp()));
 }
@@ -36,6 +48,11 @@ class TripyAIApp extends ConsumerWidget {
         scaffoldBackgroundColor: AppColors.background,
         primaryColor: AppColors.greenAccent,
         cardColor: AppColors.surface,
+        textSelectionTheme: const TextSelectionThemeData(
+          cursorColor: AppColors.greenAccent,
+          selectionColor: Colors.white24,
+          selectionHandleColor: AppColors.greenAccent,
+        ),
         textTheme: const TextTheme(
           bodyMedium: TextStyle(color: AppColors.textPrimary),
         ),
@@ -75,7 +92,7 @@ class TripyAIApp extends ConsumerWidget {
         ),
         error: (e, _) => Scaffold(body: Center(child: Text('Error: $e'))),
       ),
-      onGenerateRoute: AppRoutes.generateRoute, 
+      onGenerateRoute: AppRoutes.generateRoute,
     );
   }
 }

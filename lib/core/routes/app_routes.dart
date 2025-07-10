@@ -6,6 +6,7 @@ import 'package:tripy_tropy/presentation/screens/home/created_page.dart';
 import 'package:tripy_tropy/presentation/screens/home/creating_page.dart';
 import 'package:tripy_tropy/presentation/screens/home/follow_up_chat_screen.dart';
 import 'package:tripy_tropy/presentation/screens/home/home_screen.dart';
+import 'package:tripy_tropy/presentation/screens/profile/profile_screen.dart';
 
 class AppRoutes {
   static const String login = '/login';
@@ -15,6 +16,7 @@ class AppRoutes {
   static const String created = '/created';
   static const String Itinerary = '/Itinerary';
   static const String followUpChat = '/follow';
+  static const String profile = '/profile';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -42,6 +44,9 @@ class AppRoutes {
           builder: (_) => const FollowUpChatScreen(),
           settings: settings, // ✅ Pass arguments here
         );
+
+      case profile:
+        return MaterialPageRoute(builder: (_) => const ProfileScreen());
 
       default:
         return MaterialPageRoute(

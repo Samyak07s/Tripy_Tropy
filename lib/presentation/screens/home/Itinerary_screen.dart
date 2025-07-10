@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive/hive.dart';
 import 'package:tripy_tropy/core/constants/app_colors.dart';
 import 'package:tripy_tropy/application/providers/itinerary_provider.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:tripy_tropy/core/routes/app_routes.dart';
+import 'package:tripy_tropy/data/models/itinerary_model.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+final saveOfflineProvider = StateProvider<bool>((ref) => false);
 
 class ItineraryScreen extends ConsumerWidget {
   final String prompt;
@@ -42,15 +46,15 @@ class ItineraryScreen extends ConsumerWidget {
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: result.when(
-          loading: () => _buildLoadingUI(context),
+          loading: () => _buildLoadingUI(ref, context),
           error: (err, _) => _buildErrorUI(err.toString()),
-          data: (itinerary) => _buildItineraryUI(context, itinerary),
+          data: (itinerary) => _buildItineraryUI(ref, context, itinerary),
         ),
       ),
     );
   }
 
-  Widget _buildLoadingUI(BuildContext context) {
+  Widget _buildLoadingUI(WidgetRef ref, BuildContext context) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -74,13 +78,13 @@ class ItineraryScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           followUpButton(context, '', disabled: true),
           const SizedBox(height: 12),
-          saveOfflineCheckbox(),
+          saveOfflineCheckbox(ref, prompt, ""),
         ],
       ),
     );
   }
 
-  Widget _buildItineraryUI(BuildContext context, String itinerary) {
+  Widget _buildItineraryUI(WidgetRef ref, BuildContext context, String itinerary) {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,7 +121,7 @@ class ItineraryScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           followUpButton(context, itinerary),
           const SizedBox(height: 12),
-          saveOfflineCheckbox(),
+          saveOfflineCheckbox(ref, prompt, itinerary),
         ],
       ),
     );
@@ -155,10 +159,35 @@ class ItineraryScreen extends ConsumerWidget {
     );
   }
 
-  Widget saveOfflineCheckbox() {
+  Widget saveOfflineCheckbox(WidgetRef ref, String prompt, String response) {
+    final isChecked = ref.watch(saveOfflineProvider);
+
     return Row(
       children: [
-        Checkbox(value: false, onChanged: (val) {}),
+        Checkbox(
+          value: isChecked,
+          onChanged: (val) async {
+            if (val == true) {
+              final box = Hive.box<ItineraryModel>('itineraries');
+              final alreadySaved = box.values.any(
+                  (item) => item.prompt == prompt && item.response == response);
+
+              if (!alreadySaved) {
+                await box
+                    .add(ItineraryModel(prompt: prompt, response: response));
+                ref.read(saveOfflineProvider.notifier).state = true;
+                ScaffoldMessenger.of(ref.context).showSnackBar(
+                  const SnackBar(content: Text("✅ Saved for offline use")),
+                );
+              } else {
+                ref.read(saveOfflineProvider.notifier).state = true;
+                ScaffoldMessenger.of(ref.context).showSnackBar(
+                  const SnackBar(content: Text("ℹ️ Already saved")),
+                );
+              }
+            }
+          },
+        ),
         const Text("Save Offline", style: TextStyle(color: Colors.white)),
       ],
     );

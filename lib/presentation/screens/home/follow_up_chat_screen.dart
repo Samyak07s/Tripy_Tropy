@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive/hive.dart';
 import 'package:tripy_tropy/core/constants/app_colors.dart';
 import 'package:tripy_tropy/application/providers/followup_chat_provider.dart';
 import 'package:tripy_tropy/data/models/chat_message.dart';
+import 'package:tripy_tropy/data/models/itinerary_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FollowUpChatScreen extends ConsumerStatefulWidget {
@@ -92,9 +95,9 @@ class _FollowUpChatScreenState extends ConsumerState<FollowUpChatScreen> {
                 final msg = messages[index];
                 final isUser = msg.sender == "user";
                 return Align(
-                  alignment:
-                      isUser ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Container(
+                    alignment:
+                        isUser ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Container(
                       margin: const EdgeInsets.only(bottom: 16),
                       padding: const EdgeInsets.all(16),
                       constraints: const BoxConstraints(maxWidth: 300),
@@ -107,27 +110,87 @@ class _FollowUpChatScreenState extends ConsumerState<FollowUpChatScreen> {
                       child: isUser
                           ? Text(msg.message,
                               style: const TextStyle(color: Colors.white))
-                          : MarkdownBody(
-                              data: msg.message,
-                              styleSheet: MarkdownStyleSheet.fromTheme(
-                                      Theme.of(context))
-                                  .copyWith(
-                                p: const TextStyle(color: Colors.white),
-                                a: const TextStyle(
-                                  color: Colors.lightBlueAccent,
-                                  //decoration: TextDecoration.underline,
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                MarkdownBody(
+                                  data: msg.message,
+                                  styleSheet: MarkdownStyleSheet(
+                                    p: const TextStyle(color: Colors.white),
+                                    strong: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white),
+                                    a: const TextStyle(
+                                        color: Colors.lightBlueAccent),
+                                  ),
                                 ),
-                                strong: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white),
-                              ),
-                              onTapLink: (text, href, title) {
-                                if (href != null) {
-                                  launchUrl(Uri.parse(href));
-                                }
-                              },
-                            )),
-                );
+                                const SizedBox(height: 12),
+                                Wrap(
+                                  spacing: 8,
+                                  children: [
+                                    _actionButton(
+                                      icon: Icons.copy,
+                                      label: "Copy",
+                                      onPressed: () {
+                                        Clipboard.setData(
+                                            ClipboardData(text: msg.message));
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                              content: Text(
+                                                  "✅ Copied to clipboard")),
+                                        );
+                                      },
+                                    ),
+                                    _actionButton(
+                                      icon: Icons.save_alt,
+                                      label: "Save",
+                                      onPressed: () async {
+                                        final box = Hive.box<ItineraryModel>(
+                                            'itineraries');
+                                        final prompt = chatArgs['prompt']!;
+                                        final alreadySaved = box.values.any(
+                                            (item) =>
+                                                item.prompt == prompt &&
+                                                item.response == msg.message);
+                                        if (!alreadySaved) {
+                                          await box.add(ItineraryModel(
+                                              prompt: prompt,
+                                              response: msg.message));
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                                content:
+                                                    Text("✅ Saved offline")),
+                                          );
+                                        } else {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                                content:
+                                                    Text("ℹ️ Already saved")),
+                                          );
+                                        }
+                                      },
+                                    ),
+                                    _actionButton(
+                                      icon: Icons.refresh,
+                                      label: "Retry",
+                                      onPressed: () {
+                                        final prompt = chatArgs['prompt']!;
+                                        ref
+                                            .read(chatProvider({
+                                              'prompt': prompt,
+                                              'response': ''
+                                            }).notifier)
+                                            .sendMessage(prompt);
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                    ));
               },
             ),
           ),
@@ -153,6 +216,7 @@ class _FollowUpChatScreenState extends ConsumerState<FollowUpChatScreen> {
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 14),
                         border: InputBorder.none,
+                        focusedBorder: InputBorder.none,
                       ),
                       style: const TextStyle(color: Colors.white),
                     ),
@@ -178,6 +242,22 @@ class _FollowUpChatScreenState extends ConsumerState<FollowUpChatScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _actionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+  }) {
+    return TextButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 16, color: Colors.white70),
+      label: Text(label, style: const TextStyle(color: Colors.white70)),
+      style: TextButton.styleFrom(
+        minimumSize: const Size(80, 36),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
       ),
     );
   }
