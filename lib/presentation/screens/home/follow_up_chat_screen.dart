@@ -147,12 +147,14 @@ class _FollowUpChatScreenState extends ConsumerState<FollowUpChatScreen> {
                                       label: "Save",
                                       onPressed: () async {
                                         final box = Hive.box<ItineraryModel>(
-                                            'itineraries');
+                                            'saved_itineraries');
                                         final prompt = chatArgs['prompt']!;
                                         final alreadySaved = box.values.any(
-                                            (item) =>
-                                                item.prompt == prompt &&
-                                                item.response == msg.message);
+                                          (item) =>
+                                              item.prompt == prompt &&
+                                              item.response == msg.message,
+                                        );
+
                                         if (!alreadySaved) {
                                           await box.add(ItineraryModel(
                                               prompt: prompt,

@@ -2,17 +2,18 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive/hive.dart';
-import 'package:hive_flutter/adapters.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:tripy_tropy/application/providers/auth_provider.dart';
+import 'package:tripy_tropy/core/constants/app_colors.dart';
 import 'package:tripy_tropy/core/routes/app_routes.dart';
 import 'package:tripy_tropy/data/models/itinerary_model.dart';
 import 'package:tripy_tropy/firebase_options.dart';
 import 'package:tripy_tropy/presentation/screens/auth/login_screen.dart';
 import 'package:tripy_tropy/presentation/screens/home/home_screen.dart';
-import 'core/constants/app_colors.dart';
-import 'presentation/screens/auth/signup_screen.dart';
+
+/// ✅ Global RouteObserver for screen transitions
+final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,11 +24,9 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // ✅ Only call once
   final dir = await getApplicationDocumentsDirectory();
   await Hive.initFlutter(dir.path);
 
-  // ✅ Register and open Hive box
   Hive.registerAdapter(ItineraryModelAdapter());
   await Hive.openBox<ItineraryModel>('saved_itineraries');
 
@@ -40,6 +39,7 @@ class TripyAIApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
+
     return MaterialApp(
       title: 'Tripy AI',
       theme: ThemeData(
@@ -85,6 +85,10 @@ class TripyAIApp extends ConsumerWidget {
         ),
       ),
       debugShowCheckedModeBanner: false,
+
+      /// ✅ This enables route tracking for back navigation detection
+      navigatorObservers: [routeObserver],
+
       home: authState.when(
         data: (user) => user != null ? const HomeScreen() : const LoginScreen(),
         loading: () => const Scaffold(

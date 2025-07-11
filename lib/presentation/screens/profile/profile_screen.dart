@@ -1,10 +1,12 @@
 
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:tripy_tropy/core/constants/app_colors.dart';
 import 'package:tripy_tropy/application/providers/user_provider.dart';
+import 'package:tripy_tropy/core/routes/app_routes.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -20,7 +22,35 @@ class ProfileScreen extends ConsumerWidget {
         backgroundColor: AppColors.background,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text("Profile", style: TextStyle(color: Colors.white)),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text("Profile", style: TextStyle(color: Colors.white)),
+            Center(
+              child: TextButton.icon(
+                icon: const Icon(Icons.logout, color: Colors.redAccent),
+                label: const Text("Logout",
+                    style: TextStyle(color: Colors.redAccent)),
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut();
+                  final box = await Hive.openBox('userBox');
+                  await box.clear(); // Clear local user data if any
+
+                  // Reset userProvider
+                  ref.read(userProvider.notifier).updateName("");
+
+                  // Navigate to login screen
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    AppRoutes.login,
+                    (route) => false,
+                  );
+                },
+              ),
+            )
+          ],
+        ),
+        
       ),
       body: Padding(
         padding: const EdgeInsets.all(24),
@@ -40,29 +70,31 @@ class ProfileScreen extends ConsumerWidget {
                 hintStyle: const TextStyle(color: Colors.white60),
                 focusedBorder: InputBorder.none,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(26),
+                  borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide.none,
                 ),
               ),
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () async {
-                final updated = controller.text.trim();
-                if (updated.isNotEmpty) {
-                  final box = await Hive.openBox('userBox');
-                  await box.put('username', updated);
-                  ref.read(userProvider.notifier).updateName(updated);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Name updated")),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.greenAccent,
-                foregroundColor: Colors.black,
+            Center(
+              child: ElevatedButton(
+                onPressed: () async {
+                  final updated = controller.text.trim();
+                  if (updated.isNotEmpty) {
+                    final box = await Hive.openBox('userBox');
+                    await box.put('username', updated);
+                    ref.read(userProvider.notifier).updateName(updated);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Name updated")),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.greenAccent,
+                  foregroundColor: Colors.black,
+                ),
+                child: const Text("Save"),
               ),
-              child: const Text("Save"),
             ),
           ],
         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
+import 'package:tripy_tropy/application/providers/saved_itinerary_provider.dart';
 import 'package:tripy_tropy/core/constants/app_colors.dart';
 import 'package:tripy_tropy/application/providers/itinerary_provider.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -9,6 +10,9 @@ import 'package:tripy_tropy/data/models/itinerary_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 final saveOfflineProvider = StateProvider<bool>((ref) => false);
+final isCheckedProvider =
+    StateProvider.family<bool, String>((ref, prompt) => false);
+
 
 class ItineraryScreen extends ConsumerWidget {
   final String prompt;
@@ -84,7 +88,8 @@ class ItineraryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildItineraryUI(WidgetRef ref, BuildContext context, String itinerary) {
+  Widget _buildItineraryUI(
+      WidgetRef ref, BuildContext context, String itinerary) {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,8 +164,8 @@ class ItineraryScreen extends ConsumerWidget {
     );
   }
 
-  Widget saveOfflineCheckbox(WidgetRef ref, String prompt, String response) {
-    final isChecked = ref.watch(saveOfflineProvider);
+  Widget saveOfflineCheckbox(WidgetRef ref, String prompt, String itinerary) {
+    final isChecked = ref.watch(isCheckedProvider(prompt));
 
     return Row(
       children: [
@@ -168,25 +173,17 @@ class ItineraryScreen extends ConsumerWidget {
           value: isChecked,
           onChanged: (val) async {
             if (val == true) {
-              final box = Hive.box<ItineraryModel>('itineraries');
-              final alreadySaved = box.values.any(
-                  (item) => item.prompt == prompt && item.response == response);
-
-              if (!alreadySaved) {
-                await box
-                    .add(ItineraryModel(prompt: prompt, response: response));
-                ref.read(saveOfflineProvider.notifier).state = true;
-                ScaffoldMessenger.of(ref.context).showSnackBar(
-                  const SnackBar(content: Text("✅ Saved for offline use")),
-                );
-              } else {
-                ref.read(saveOfflineProvider.notifier).state = true;
-                ScaffoldMessenger.of(ref.context).showSnackBar(
-                  const SnackBar(content: Text("ℹ️ Already saved")),
-                );
-              }
+              final model = ItineraryModel(
+                prompt: prompt,
+                response: itinerary,
+              );
+              await ref
+                  .read(savedItineraryProvider.notifier)
+                  .saveItinerary(model);
             }
+            ref.read(isCheckedProvider(prompt).notifier).state = val ?? false;
           },
+          activeColor: AppColors.greenAccent,
         ),
         const Text("Save Offline", style: TextStyle(color: Colors.white)),
       ],
